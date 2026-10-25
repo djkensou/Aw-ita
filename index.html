@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Agua">
+    <meta name="theme-color" content="#000000">
+    <title>Agua</title>
+    
+    <!-- Icono personalizado: gota de agua blanca sobre fondo negro -->
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' fill='%23000000'/%3E%3Cpath d='M90 30 C90 30 40 90 40 120 C40 150 65 170 90 170 C115 170 140 150 140 120 C140 90 90 30 90 30 Z' fill='%23ffffff'/%3E%3C/svg%3E">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: #000;
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 60px 24px 40px;
+            overflow: hidden;
+        }
+
+        .goal {
+            font-size: 15px;
+            color: #888;
+            letter-spacing: 0.3px;
+            padding: 8px 16px;
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.2s;
+            text-align: center;
+        }
+
+        .goal:active {
+            color: #fff;
+        }
+
+        .main {
+            text-align: center;
+            width: 100%;
+        }
+
+        .total {
+            font-size: 78px;
+            font-weight: 300;
+            letter-spacing: -2px;
+            line-height: 1;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .total:active {
+            opacity: 0.7;
+        }
+
+        .unit {
+            font-size: 20px;
+            font-weight: 400;
+            color: #666;
+            margin-top: 6px;
+        }
+
+        .progress-container {
+            margin: 48px auto 0;
+            width: 100%;
+            max-width: 300px;
+            cursor: pointer;
+            padding: 12px 0;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: #222;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #4a9eff;
+            border-radius: 10px;
+            width: 0%;
+            transition: width 0.35s ease;
+        }
+
+        .progress-container:active .progress-bar {
+            opacity: 0.6;
+        }
+
+        .percentage {
+            margin-top: 14px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 12px;
+            width: 100%;
+            max-width: 340px;
+        }
+
+        .btn {
+            flex: 1;
+            background: transparent;
+            border: 1px solid #333;
+            color: #fff;
+            padding: 18px 0;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn:active {
+            background: #111;
+            border-color: #4a9eff;
+            transform: scale(0.96);
+        }
+
+        /* Modal genérico */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.92);
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #111;
+            padding: 28px 24px;
+            border-radius: 18px;
+            width: 100%;
+            max-width: 320px;
+            text-align: center;
+        }
+
+        .modal-content p {
+            font-size: 16px;
+            color: #aaa;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+
+        .modal-content input {
+            width: 100%;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            color: #fff;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            outline: none;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .modal-buttons button {
+            flex: 1;
+            padding: 14px;
+            border-radius: 12px;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .btn-cancel {
+            background: #222;
+            color: #fff;
+        }
+
+        .btn-confirm {
+            background: #4a9eff;
+            color: #000;
+            font-weight: 600;
+        }
+
+        /* Calendario */
+        .calendar-modal .modal-content {
+            max-width: 340px;
+            padding: 24px 18px;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+        }
+
+        .calendar-title {
+            font-size: 17px;
+            font-weight: 500;
+            color: #fff;
+        }
+
+        .calendar-nav {
+            background: transparent;
+            border: 1px solid #333;
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .calendar-nav:active {
+            background: #222;
+        }
+
+        .calendar-nav:disabled {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .weekdays span {
+            font-size: 12px;
+            color: #555;
+            padding: 4px 0;
+        }
+
+        .days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+
+        .day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #888;
+            border-radius: 50%;
+            position: relative;
+        }
+
+        .day.other-month {
+            color: #333;
+        }
+
+        .day.today {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .day.completed {
+            background: rgba(74, 158, 255, 0.25);
+            color: #4a9eff;
+            font-weight: 500;
+        }
+
+        .day.completed::after {
+            content: '';
+            position: absolute;
+            bottom: 3px;
+            width: 4px;
+            height: 4px;
+            background: #4a9eff;
+            border-radius: 50%;
+        }
+
+        .close-calendar {
+            margin-top: 20px;
+            background: #222;
+            border: none;
+            color: #fff;
+            padding: 12px;
+            border-radius: 12px;
+            width: 100%;
+            font-size: 15px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="goal" id="goalText" onclick="openGoalModal()">
+        Meta: 2000 ml
+    </div>
+
+    <div class="main">
+        <div class="total" id="total" onclick="openCalendar()">0</div>
+        <div class="unit">ml</div>
+
+        <div class="progress-container" onclick="confirmUndo()">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="percentage" id="percentage">0%</div>
+        </div>
+    </div>
+
+    <div class="buttons">
+        <button class="btn" onclick="addWater(200)">+200 ml</button>
+        <button class="btn" onclick="addWater(250)">+250 ml</button>
+        <button class="btn" onclick="addWater(300)">+300 ml</button>
+    </div>
+
+    <!-- Modal cambiar meta -->
+    <div class="modal" id="goalModal">
+        <div class="modal-content">
+            <p>Nueva meta diaria</p>
+            <input type="number" id="goalInput" inputmode="numeric" pattern="[0-9]*">
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeGoalModal()">Cancelar</button>
+                <button class="btn-confirm" onclick="saveGoal()">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal confirmar deshacer -->
+    <div class="modal" id="undoModal">
+        <div class="modal-content">
+            <p>¿Eliminar el último consumo?</p>
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeUndoModal()">No</button>
+                <button class="btn-confirm" onclick="doUndo()">Sí</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal calendario -->
+    <div class="modal calendar-modal" id="calendarModal">
+        <div class="modal-content">
+            <div class="calendar-header">
+                <button class="calendar-nav" id="prevMonthBtn" onclick="changeMonth(-1)">Anterior</button>
+                <div class="calendar-title" id="calendarTitle">Octubre 2026</div>
+                <button class="calendar-nav" id="nextMonthBtn" onclick="changeMonth(1)" style="visibility: hidden;">Siguiente</button>
+            </div>
+            <div class="weekdays">
+                <span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span>
+            </div>
+            <div class="days" id="calendarDays"></div>
+            <button class="close-calendar" onclick="closeCalendar()">Cerrar</button>
+        </div>
+    </div>
+
+    <script>
+        const DEFAULT_GOAL = 2000;
+        let total = 0;
+        let goal = DEFAULT_GOAL;
+        let history = []; // últimos consumos del día actual para deshacer
+        let dailyTotals = {}; // { "2026-10-25": 2100, ... }
+        let currentViewDate = new Date(); // mes que se está viendo en el calendario
+
+        function getTodayKey() {
+            const d = new Date();
+            return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+        }
+
+        function loadData() {
+            const today = getTodayKey();
+            const savedDate = localStorage.getItem('waterDate');
+            const savedTotal = localStorage.getItem('waterTotal');
+            const savedGoal = localStorage.getItem('waterGoal');
+            const savedHistory = localStorage.getItem('waterHistory');
+            const savedDaily = localStorage.getItem('waterDailyTotals');
+
+            if (savedDaily) {
+                try { dailyTotals = JSON.parse(savedDaily); } catch(e) { dailyTotals = {}; }
+            }
+
+            if (savedDate === today) {
+                total = parseInt(savedTotal) || 0;
+                history = savedHistory ? JSON.parse(savedHistory) : [];
+            } else {
+                // Nuevo día: guardar el total de ayer si existía
+                if (savedDate && savedTotal) {
+                    dailyTotals[savedDate] = parseInt(savedTotal) || 0;
+                }
+                total = 0;
+                history = [];
+                localStorage.setItem('waterDate', today);
+            }
+
+            // Guardar el total de hoy también
+            dailyTotals[today] = total;
+
+            if (savedGoal) goal = parseInt(savedGoal);
+
+            saveAll();
+            updateUI();
+        }
+
+        function saveAll() {
+            const today = getTodayKey();
+            dailyTotals[today] = total;
+            localStorage.setItem('waterTotal', total);
+            localStorage.setItem('waterDate', today);
+            localStorage.setItem('waterGoal', goal);
+            localStorage.setItem('waterHistory', JSON.stringify(history));
+            localStorage.setItem('waterDailyTotals', JSON.stringify(dailyTotals));
+        }
+
+        function addWater(amount) {
+            total += amount;
+            history.push(amount);
+            if (history.length > 30) history.shift();
+            saveAll();
+            updateUI();
+        }
+
+        function confirmUndo() {
+            if (history.length === 0) return;
+            document.getElementById('undoModal').classList.add('active');
+        }
+
+        function closeUndoModal() {
+            document.getElementById('undoModal').classList.remove('active');
+        }
+
+        function doUndo() {
+            if (history.length === 0) {
+                closeUndoModal();
+                return;
+            }
+            const last = history.pop();
+            total = Math.max(0, total - last);
+            saveAll();
+            updateUI();
+            closeUndoModal();
+        }
+
+        function updateUI() {
+            document.getElementById('total').textContent = total;
+            document.getElementById('goalText').textContent = `Meta: ${goal} ml`;
+
+            const percent = Math.round((total / goal) * 100);
+            document.getElementById('percentage').textContent = percent + '%';
+
+            const barWidth = Math.min(percent, 160);
+            document.getElementById('progressFill').style.width = barWidth + '%';
+        }
+
+        function openGoalModal() {
+            document.getElementById('goalInput').value = goal;
+            document.getElementById('goalModal').classList.add('active');
+            setTimeout(() => document.getElementById('goalInput').focus(), 100);
+        }
+
+        function closeGoalModal() {
+            document.getElementById('goalModal').classList.remove('active');
+        }
+
+        function saveGoal() {
+            const newGoal = parseInt(document.getElementById('goalInput').value);
+            if (newGoal > 0) {
+                goal = newGoal;
+                saveAll();
+                updateUI();
+                closeGoalModal();
+            }
+        }
+
+        // ========== CALENDARIO ==========
+        function openCalendar() {
+            currentViewDate = new Date(); // siempre empieza en mes actual
+            renderCalendar();
+            document.getElementById('calendarModal').classList.add('active');
+        }
+
+        function closeCalendar() {
+            document.getElementById('calendarModal').classList.remove('active');
+        }
+
+        function changeMonth(delta) {
+            // Solo permitir ir al mes anterior (delta = -1)
+            if (delta === -1) {
+                currentViewDate.setMonth(currentViewDate.getMonth() - 1);
+                renderCalendar();
+            }
+            // No permitimos ir hacia adelante desde el mes actual
+        }
+
+        function renderCalendar() {
+            const year = currentViewDate.getFullYear();
+            const month = currentViewDate.getMonth();
+
+            const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                                'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+            document.getElementById('calendarTitle').textContent = monthNames[month] + ' ' + year;
+
+            // Deshabilitar "Anterior" si ya estamos en el mes anterior al actual
+            const now = new Date();
+            const isCurrentMonth = (year === now.getFullYear() && month === now.getMonth());
+            const prevBtn = document.getElementById('prevMonthBtn');
+            // Permitimos solo un mes hacia atrás
+            const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            const canGoPrev = currentViewDate > oneMonthAgo;
+            prevBtn.disabled = !canGoPrev && !isCurrentMonth ? true : (year < oneMonthAgo.getFullYear() || (year === oneMonthAgo.getFullYear() && month < oneMonthAgo.getMonth()));
+
+            // Ajuste más simple: solo permitir ver mes actual y el inmediatamente anterior
+            const isPrevMonth = (year === oneMonthAgo.getFullYear() && month === oneMonthAgo.getMonth());
+            prevBtn.disabled = isPrevMonth; // si ya estamos en el anterior, no se puede ir más atrás
+            prevBtn.style.visibility = isCurrentMonth ? 'visible' : 'hidden';
+
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const startDay = (firstDay.getDay() + 6) % 7; // Lunes = 0
+            const totalDays = lastDay.getDate();
+
+            const daysContainer = document.getElementById('calendarDays');
+            daysContainer.innerHTML = '';
+
+            // Días del mes anterior (vacíos visuales)
+            for (let i = 0; i < startDay; i++) {
+                const empty = document.createElement('div');
+                empty.className = 'day other-month';
+                daysContainer.appendChild(empty);
+            }
+
+            const todayKey = getTodayKey();
+            const todayDate = new Date();
+
+            for (let day = 1; day <= totalDays; day++) {
+                const cell = document.createElement('div');
+                cell.className = 'day';
+                cell.textContent = day;
+
+                const key = year + '-' + String(month+1).padStart(2,'0') + '-' + String(day).padStart(2,'0');
+
+                // Marcar día de hoy
+                if (key === todayKey) {
+                    cell.classList.add('today');
+                }
+
+                // Marcar si cumplió la meta ese día
+                if (dailyTotals[key] && dailyTotals[key] >= goal) {
+                    cell.classList.add('completed');
+                }
+
+                daysContainer.appendChild(cell);
+            }
+        }
+
+        // Iniciar
+        loadData();
+    </script>
+</body>
+</html>
